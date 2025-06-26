@@ -12,6 +12,7 @@ function App() {
   const [currentState, setCurrentState] = useState<AppState>('welcome');
   const [finalMeasurements, setFinalMeasurements] = useState<BodyMeasurements | null>(null);
   const [recommendations, setRecommendations] = useState<SizingRecommendation[]>([]);
+  const [allCapturedPoseData, setAllCapturedPoseData] = useState<CapturedPoseData[]>([]);
   
   const { 
     measurements, 
@@ -34,6 +35,7 @@ function App() {
       
       setFinalMeasurements(processedMeasurements);
       setRecommendations(sizingRecs);
+      setAllCapturedPoseData(poseData); // Store the raw pose data
       setCurrentState('results');
     } catch (error) {
       console.error('Error processing measurements:', error);
@@ -46,6 +48,7 @@ function App() {
     setCurrentState('welcome');
     setFinalMeasurements(null);
     setRecommendations([]);
+    setAllCapturedPoseData([]);
   };
 
   const handleBackToWelcome = () => {
@@ -73,6 +76,7 @@ function App() {
         <ResultsScreen 
           measurements={finalMeasurements}
           recommendations={recommendations}
+          rawPoseData={allCapturedPoseData}
           onRestart={handleRestart}
         />
       )}

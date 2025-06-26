@@ -1,16 +1,18 @@
 import React, { useState } from 'react';
 import { Download, Share2, RotateCcw, Ruler, Shirt, User, Save, CheckCircle } from 'lucide-react';
-import { BodyMeasurements, SizingRecommendation } from '../types/measurements';
+import { BodyMeasurements, SizingRecommendation, CapturedPoseData } from '../types/measurements';
 
 interface ResultsScreenProps {
   measurements: BodyMeasurements;
   recommendations: SizingRecommendation[];
+  rawPoseData: CapturedPoseData[];
   onRestart: () => void;
 }
 
 export const ResultsScreen: React.FC<ResultsScreenProps> = ({ 
   measurements, 
   recommendations, 
+  rawPoseData,
   onRestart 
 }) => {
   const [activeTab, setActiveTab] = useState<'measurements' | 'sizes'>('measurements');
@@ -55,7 +57,7 @@ export const ResultsScreen: React.FC<ResultsScreenProps> = ({
         },
         body: JSON.stringify({
           measurements,
-          rawLandmarks: [], // This would contain the actual pose data
+          rawLandmarks: rawPoseData, // Now passing the actual pose data
           profileData: {
             name: 'Anonymous User', // In a real app, you'd get this from user input
             preferences: { units, fit: 'regular' }
@@ -80,6 +82,7 @@ export const ResultsScreen: React.FC<ResultsScreenProps> = ({
     const data = {
       measurements,
       recommendations,
+      rawPoseData,
       timestamp: new Date().toISOString(),
       confidence: measurements.confidence
     };
@@ -121,7 +124,7 @@ export const ResultsScreen: React.FC<ResultsScreenProps> = ({
           <div>
             <h1 className="text-2xl font-bold text-white">Your Measurements</h1>
             <p className="text-green-200">
-              Confidence: {Math.round(measurements.confidence * 100)}%
+              Confidence: {Math.round(measurements.confidence * 100)}% • {rawPoseData.length} poses captured
             </p>
           </div>
           <div className="flex space-x-2">
