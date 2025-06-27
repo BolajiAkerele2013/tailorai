@@ -44,12 +44,12 @@ git clone https://github.com/BolajiAkerele2013/tailorai
 cd tailorai
 npm install
 
-```Start Dev Server (w/ Netlify)
+## Start Dev Server (w/ Netlify)
 npm install -g netlify-cli
 netlify dev
 Visit: http://localhost:8888
 
-🧠 ```Pose Estimation Logic
+🧠 ## Pose Estimation Logic
 TailorAI uses MediaPipe’s 33-point Pose model to capture:
  - poseLandmarks (2D screen coordinates)
  - poseWorldLandmarks (3D estimation)
