@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Camera, RotateCcw, CheckCircle, AlertCircle, Clock, SwitchCamera } from 'lucide-react';
+import { Camera, RotateCcw, CheckCircle, AlertCircle, Clock, SwitchCamera, X } from 'lucide-react';
 import { useCamera } from '../hooks/useCamera';
 import { PoseStep, CapturedPoseData } from '../types/measurements';
 
@@ -141,6 +141,11 @@ export const CameraCapture: React.FC<CameraCaptureProps> = ({ onComplete, onBack
     setShowCameraSelector(false);
   };
 
+  const handleExit = () => {
+    stopCamera();
+    onBack();
+  };
+
   const currentStep = poseSteps[currentStepIndex];
   const progress = ((currentStepIndex + 1) / poseSteps.length) * 100;
   const isPoseDetected = currentPoseResults?.poseLandmarks && currentPoseResults.poseLandmarks.length > 0;
@@ -210,6 +215,16 @@ export const CameraCapture: React.FC<CameraCaptureProps> = ({ onComplete, onBack
                 )}
               </div>
             )}
+            
+            {/* Exit Button */}
+            <button
+              onClick={handleExit}
+              className="px-4 py-2 bg-red-500/80 text-white rounded-lg hover:bg-red-600 transition-colors flex items-center"
+              title="Exit and turn off camera"
+            >
+              <X className="w-4 h-4 mr-2" />
+              Exit
+            </button>
           </div>
         </div>
       </div>

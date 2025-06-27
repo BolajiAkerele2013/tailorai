@@ -6,6 +6,7 @@ interface CameraDevice {
   deviceId: string;
   label: string;
   kind: string;
+  facingModeHint?: 'user' | 'environment';
 }
 
 export const useCamera = () => {
@@ -65,23 +66,38 @@ export const useCamera = () => {
     initializePose();
   }, []);
 
-  // Enumerate available cameras
+  // Enumerate available cameras with facing mode hints
   const enumerateCameras = async () => {
     try {
       const devices = await navigator.mediaDevices.enumerateDevices();
       const videoDevices = devices
         .filter(device => device.kind === 'videoinput')
-        .map(device => ({
-          deviceId: device.deviceId,
-          label: device.label || `Camera ${device.deviceId.slice(0, 8)}`,
-          kind: device.kind
-        }));
+        .map(device => {
+          const label = device.label || `Camera ${device.deviceId.slice(0, 8)}`;
+          let facingModeHint: 'user' | 'environment' | undefined;
+          
+          // Infer facing mode from device label
+          const lowerLabel = label.toLowerCase();
+          if (lowerLabel.includes('front') || lowerLabel.includes('user') || lowerLabel.includes('selfie')) {
+            facingModeHint = 'user';
+          } else if (lowerLabel.includes('back') || lowerLabel.includes('rear') || lowerLabel.includes('environment')) {
+            facingModeHint = 'environment';
+          }
+          
+          return {
+            deviceId: device.deviceId,
+            label,
+            kind: device.kind,
+            facingModeHint
+          };
+        });
       
       setAvailableCameras(videoDevices);
       
       // Set default camera (prefer front camera if available)
       if (videoDevices.length > 0 && !selectedCameraId) {
         const frontCamera = videoDevices.find(device => 
+          device.facingModeHint === 'user' ||
           device.label.toLowerCase().includes('front') || 
           device.label.toLowerCase().includes('user')
         );
@@ -111,12 +127,16 @@ export const useCamera = () => {
       }
 
       const cameraId = deviceId || selectedCameraId;
+      const selectedCamera = availableCameras.find(camera => camera.deviceId === cameraId);
       
       const constraints: MediaStreamConstraints = {
         video: {
           width: { ideal: 1280 },
           height: { ideal: 720 },
-          ...(cameraId ? { deviceId: { exact: cameraId } } : { facingMode: 'user' })
+          ...(cameraId ? { 
+            deviceId: { exact: cameraId },
+            ...(selectedCamera?.facingModeHint && { facingMode: selectedCamera.facingModeHint })
+          } : { facingMode: 'user' })
         },
         audio: false
       };
