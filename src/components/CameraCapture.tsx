@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Camera, RotateCcw, CheckCircle, AlertCircle, Clock } from 'lucide-react';
+import { Camera, RotateCcw, CheckCircle, AlertCircle, Clock, SwitchCamera } from 'lucide-react';
 import { useCamera } from '../hooks/useCamera';
 import { PoseStep, CapturedPoseData } from '../types/measurements';
 
@@ -65,12 +65,25 @@ const timerOptions = [
 ];
 
 export const CameraCapture: React.FC<CameraCaptureProps> = ({ onComplete, onBack }) => {
-  const { cameraState, videoRef, canvasRef, startCamera, stopCamera, capturePoseData, currentPoseResults } = useCamera();
+  const { 
+    cameraState, 
+    videoRef, 
+    canvasRef, 
+    startCamera, 
+    stopCamera, 
+    capturePoseData, 
+    currentPoseResults,
+    availableCameras,
+    selectedCameraId,
+    switchCamera
+  } = useCamera();
+  
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [countdown, setCountdown] = useState(0);
   const [capturedPoseData, setCapturedPoseData] = useState<CapturedPoseData[]>([]);
   const [isCapturing, setIsCapturing] = useState(false);
   const [selectedTimerDuration, setSelectedTimerDuration] = useState(3);
+  const [showCameraSelector, setShowCameraSelector] = useState(false);
 
   useEffect(() => {
     startCamera();
@@ -123,6 +136,11 @@ export const CameraCapture: React.FC<CameraCaptureProps> = ({ onComplete, onBack
     setCountdown(0);
   };
 
+  const handleCameraSwitch = async (deviceId: string) => {
+    await switchCamera(deviceId);
+    setShowCameraSelector(false);
+  };
+
   const currentStep = poseSteps[currentStepIndex];
   const progress = ((currentStepIndex + 1) / poseSteps.length) * 100;
   const isPoseDetected = currentPoseResults?.poseLandmarks && currentPoseResults.poseLandmarks.length > 0;
@@ -132,6 +150,11 @@ export const CameraCapture: React.FC<CameraCaptureProps> = ({ onComplete, onBack
       return 'Capture Now';
     }
     return `Start ${selectedTimerDuration}s Timer`;
+  };
+
+  const getCurrentCameraLabel = () => {
+    const currentCamera = availableCameras.find(camera => camera.deviceId === selectedCameraId);
+    return currentCamera?.label || 'Camera';
   };
 
   return (
@@ -149,7 +172,45 @@ export const CameraCapture: React.FC<CameraCaptureProps> = ({ onComplete, onBack
             <h2 className="text-xl font-semibold text-white">Body Measurement Scan</h2>
             <p className="text-sm text-gray-300">Step {currentStepIndex + 1} of {poseSteps.length}</p>
           </div>
-          <div className="w-16"></div>
+          <div className="flex items-center space-x-2">
+            {/* Camera Selector */}
+            {availableCameras.length > 1 && (
+              <div className="relative">
+                <button
+                  onClick={() => setShowCameraSelector(!showCameraSelector)}
+                  disabled={isCapturing}
+                  className="px-3 py-2 bg-white/10 text-white rounded-lg hover:bg-white/20 transition-colors flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
+                  title="Switch Camera"
+                >
+                  <SwitchCamera className="w-4 h-4 mr-2" />
+                  <span className="hidden sm:inline text-sm">{getCurrentCameraLabel()}</span>
+                </button>
+                
+                {showCameraSelector && (
+                  <div className="absolute right-0 top-full mt-2 bg-gray-800 border border-gray-600 rounded-lg shadow-xl z-50 min-w-48">
+                    <div className="p-2">
+                      <div className="text-xs text-gray-400 px-2 py-1 border-b border-gray-600 mb-1">
+                        Select Camera
+                      </div>
+                      {availableCameras.map((camera) => (
+                        <button
+                          key={camera.deviceId}
+                          onClick={() => handleCameraSwitch(camera.deviceId)}
+                          className={`w-full text-left px-3 py-2 text-sm rounded transition-colors ${
+                            camera.deviceId === selectedCameraId
+                              ? 'bg-orange-500 text-white'
+                              : 'text-gray-300 hover:bg-gray-700'
+                          }`}
+                        >
+                          {camera.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -242,6 +303,27 @@ export const CameraCapture: React.FC<CameraCaptureProps> = ({ onComplete, onBack
               </div>
             </div>
 
+            {/* Camera Info */}
+            {availableCameras.length > 0 && (
+              <div>
+                <h3 className="text-lg font-semibold text-white mb-3 flex items-center">
+                  <SwitchCamera className="w-5 h-5 mr-2" />
+                  Camera
+                </h3>
+                <div className="bg-white/5 rounded-lg p-4 border border-white/10">
+                  <div className="text-sm text-gray-300 mb-2">Active Camera:</div>
+                  <div className="text-white font-medium text-sm truncate">
+                    {getCurrentCameraLabel()}
+                  </div>
+                  {availableCameras.length > 1 && (
+                    <div className="text-xs text-gray-400 mt-2">
+                      {availableCameras.length} cameras available
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
             {/* Timer Settings */}
             <div>
               <h3 className="text-lg font-semibold text-white mb-3 flex items-center">
@@ -324,6 +406,14 @@ export const CameraCapture: React.FC<CameraCaptureProps> = ({ onComplete, onBack
           </div>
         </div>
       </div>
+
+      {/* Click outside to close camera selector */}
+      {showCameraSelector && (
+        <div 
+          className="fixed inset-0 z-40" 
+          onClick={() => setShowCameraSelector(false)}
+        />
+      )}
     </div>
   );
 };

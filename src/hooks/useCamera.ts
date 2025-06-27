@@ -2,6 +2,12 @@ import { useState, useRef, useEffect } from 'react';
 import { Pose } from '@mediapipe/pose';
 import { CameraState, PoseResults, PoseLandmark } from '../types/measurements';
 
+interface CameraDevice {
+  deviceId: string;
+  label: string;
+  kind: string;
+}
+
 export const useCamera = () => {
   const [cameraState, setCameraState] = useState<CameraState>({
     isActive: false,
@@ -10,6 +16,9 @@ export const useCamera = () => {
     isRecording: false,
     currentStep: 0
   });
+  
+  const [availableCameras, setAvailableCameras] = useState<CameraDevice[]>([]);
+  const [selectedCameraId, setSelectedCameraId] = useState<string>('');
   
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -56,18 +65,63 @@ export const useCamera = () => {
     initializePose();
   }, []);
 
-  const startCamera = async () => {
+  // Enumerate available cameras
+  const enumerateCameras = async () => {
+    try {
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const videoDevices = devices
+        .filter(device => device.kind === 'videoinput')
+        .map(device => ({
+          deviceId: device.deviceId,
+          label: device.label || `Camera ${device.deviceId.slice(0, 8)}`,
+          kind: device.kind
+        }));
+      
+      setAvailableCameras(videoDevices);
+      
+      // Set default camera (prefer front camera if available)
+      if (videoDevices.length > 0 && !selectedCameraId) {
+        const frontCamera = videoDevices.find(device => 
+          device.label.toLowerCase().includes('front') || 
+          device.label.toLowerCase().includes('user')
+        );
+        setSelectedCameraId(frontCamera?.deviceId || videoDevices[0].deviceId);
+      }
+    } catch (error) {
+      console.error('Failed to enumerate cameras:', error);
+      setCameraState(prev => ({
+        ...prev,
+        error: 'Failed to access camera devices. Please check permissions.'
+      }));
+    }
+  };
+
+  // Initialize camera enumeration on mount
+  useEffect(() => {
+    enumerateCameras();
+  }, []);
+
+  const startCamera = async (deviceId?: string) => {
     try {
       setCameraState(prev => ({ ...prev, error: null }));
       
-      const stream = await navigator.mediaDevices.getUserMedia({
+      // Stop existing stream if any
+      if (cameraState.stream) {
+        cameraState.stream.getTracks().forEach(track => track.stop());
+      }
+
+      const cameraId = deviceId || selectedCameraId;
+      
+      const constraints: MediaStreamConstraints = {
         video: {
           width: { ideal: 1280 },
           height: { ideal: 720 },
-          facingMode: 'user'
+          ...(cameraId ? { deviceId: { exact: cameraId } } : { facingMode: 'user' })
         },
         audio: false
-      });
+      };
+
+      const stream = await navigator.mediaDevices.getUserMedia(constraints);
 
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
@@ -77,11 +131,9 @@ export const useCamera = () => {
         videoRef.current.onloadedmetadata = () => {
           if (poseRef.current && videoRef.current) {
             const processFrame = async () => {
-              if (videoRef.current && poseRef.current) {
+              if (videoRef.current && poseRef.current && cameraState.isActive) {
                 await poseRef.current.send({ image: videoRef.current });
-                if (cameraState.isActive) {
-                  requestAnimationFrame(processFrame);
-                }
+                requestAnimationFrame(processFrame);
               }
             };
             processFrame();
@@ -95,12 +147,22 @@ export const useCamera = () => {
         stream,
         error: null
       }));
+
+      // Update selected camera ID if a specific device was used
+      if (deviceId) {
+        setSelectedCameraId(deviceId);
+      }
     } catch (error) {
+      console.error('Camera access error:', error);
       setCameraState(prev => ({
         ...prev,
-        error: 'Camera access denied. Please allow camera permissions.'
+        error: 'Camera access denied or device not available. Please check permissions and try again.'
       }));
     }
+  };
+
+  const switchCamera = async (deviceId: string) => {
+    await startCamera(deviceId);
   };
 
   const stopCamera = () => {
@@ -175,6 +237,10 @@ export const useCamera = () => {
     capturePoseData,
     currentPoseResults,
     startRecording,
-    stopRecording
+    stopRecording,
+    availableCameras,
+    selectedCameraId,
+    switchCamera,
+    enumerateCameras
   };
 };
