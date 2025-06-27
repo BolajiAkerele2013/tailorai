@@ -44,10 +44,14 @@ git clone https://github.com/BolajiAkerele2013/tailorai
 cd tailorai
 npm install
 
+---
+
 ## Start Dev Server (w/ Netlify)
 npm install -g netlify-cli
 netlify dev
 Visit: http://localhost:8888
+
+---
 
 🧠 ## Pose Estimation Logic
 TailorAI uses MediaPipe’s 33-point Pose model to capture:
@@ -56,6 +60,8 @@ TailorAI uses MediaPipe’s 33-point Pose model to capture:
  - segmentationMask (optional silhouette)
 
 These are continuously updated as the video plays. When the user clicks “Capture,” the app stores both the frame and landmark data for measurement processing.
+
+---
 
 🗂 ```Project Structure
 
