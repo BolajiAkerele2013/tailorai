@@ -46,7 +46,7 @@ npm install
 
 ---
 
-## Start Dev Server (w/ Netlify)
+## 🧪 Local Development ## Start Dev Server (w/ Netlify)
 npm install -g netlify-cli
 netlify dev
 Visit: http://localhost:8888
