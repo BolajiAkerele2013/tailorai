@@ -43,3 +43,51 @@
 git clone https://github.com/BolajiAkerele2013/tailorai
 cd tailorai
 npm install
+
+```Start Dev Server (w/ Netlify)
+npm install -g netlify-cli
+netlify dev
+Visit: http://localhost:8888
+
+🧠 ```Pose Estimation Logic
+TailorAI uses MediaPipe’s 33-point Pose model to capture:
+ - poseLandmarks (2D screen coordinates)
+ - poseWorldLandmarks (3D estimation)
+ - segmentationMask (optional silhouette)
+
+These are continuously updated as the video plays. When the user clicks “Capture,” the app stores both the frame and landmark data for measurement processing.
+
+🗂 ```Project Structure
+
+tailorai/
+├── src/                      # React App
+│   ├── hooks/useCamera.ts    # Camera + MediaPipe logic
+│   ├── components/           # UI components
+├── netlify/functions/        # Serverless endpoints
+├── public/                   # Static assets
+└── README.md
+
+🔮 ```Roadmap
+ Implement MediaPipe Pose in frontend
+
+ Add logic to compute actual body measurements from landmarks
+
+ Save/export user measurements (PDF, JSON)
+
+ Calibrate using reference objects (e.g., credit card, paper)
+
+ Add Tailwind CSS for design improvements
+
+🔐 Privacy
+No images or personal data are stored remotely.
+All pose analysis occurs client-side using in-browser AI models.
+
+🤝 Contributing
+ - Fork this repo
+ - Create a new branch: feature/my-feature
+ - Submit a pull request
+
+📄 License
+MIT License
+---
+
